@@ -1014,6 +1014,18 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('shortcut-delete').onclick = function(e) {
         if (!contextTargetShortcut) return;
         shortcutContextMenu.style.display = 'none';
+        // Handle built-in shortcuts
+        if (contextTargetShortcut.classList.contains('days-lived-shortcut')) {
+            contextTargetShortcut.remove();
+            localStorage.setItem('hideDaysLivedShortcut', 'true');
+            return;
+        }
+        if (contextTargetShortcut.classList.contains('day-week-shortcut')) {
+            contextTargetShortcut.remove();
+            localStorage.setItem('hideDayWeekShortcut', 'true');
+            return;
+        }
+        // Normal shortcut
         contextTargetShortcut.remove();
         persistCategoriesAndShortcuts();
     };
@@ -1407,6 +1419,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return savedAvatar || 'https://www.gravatar.com/avatar/?d=mp';
     }
     function updateDaysLivedShortcut() {
+        if (localStorage.getItem('hideDaysLivedShortcut') === 'true') return;
         const shortcutsArea = document.getElementById('shortcuts-area');
         const list = shortcutsArea && shortcutsArea.querySelector('.shortcuts-list[data-category="Common"]');
         if (!list) return;
@@ -1513,6 +1526,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return 1 + Math.round(diff / (7 * 24 * 60 * 60 * 1000));
     }
     function updateDayWeekShortcut() {
+        if (localStorage.getItem('hideDayWeekShortcut') === 'true') return;
         const shortcutsArea = document.getElementById('shortcuts-area');
         const list = shortcutsArea && shortcutsArea.querySelector('.shortcuts-list[data-category="Common"]');
         if (!list) return;
@@ -1540,12 +1554,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 list.insertBefore(shortcut, list.firstChild);
             }
         } else {
-            // Only update innerHTML and onclick, do not replace the element
             shortcut.innerHTML = `<img class="shortcut-icon" src="https://cdn-icons-png.flaticon.com/512/2921/2921222.png" alt="Day/Week" style="background:#fff;">${label}`;
-            shortcut.onclick = function(e) {
-                e.preventDefault();
-                showDayWeekInfoModal(dayNum, weekNum);
-            };
         }
     }
     function showDayWeekInfoModal(dayNum, weekNum) {
@@ -1579,7 +1588,7 @@ document.addEventListener('DOMContentLoaded', () => {
             modal.style.display = 'flex';
         }
         modal.querySelector('#day-week-info-close').onclick = function() {
-                       modal.style.display = 'none';
+            modal.style.display = 'none';
         };
         modal.onclick = function(e) {
             if (e.target === modal) modal.style.display = 'none';
@@ -1719,4 +1728,38 @@ document.addEventListener('DOMContentLoaded', () => {
         // Optionally, refresh every 30min
         setInterval(fetchAndShowWeather, 30*60*1000);
     })();
+
+    // --- Ensure shortcut context menu is attached to built-in shortcuts ---
+    function attachContextMenuToBuiltInShortcuts() {
+        // Days Lived shortcut
+        const daysLivedShortcut = document.querySelector('.shortcut.days-lived-shortcut');
+        if (daysLivedShortcut) {
+            daysLivedShortcut.oncontextmenu = function(e) {
+                e.preventDefault();
+                contextTargetShortcut = this;
+                shortcutContextMenu.style.display = 'block';
+                shortcutContextMenu.style.left = e.pageX + 'px';
+                shortcutContextMenu.style.top = e.pageY + 'px';
+            };
+        }
+        // Day/Week of Year shortcut
+        const dayWeekShortcut = document.querySelector('.shortcut.day-week-shortcut');
+        if (dayWeekShortcut) {
+            dayWeekShortcut.oncontextmenu = function(e) {
+                e.preventDefault();
+                contextTargetShortcut = this;
+                shortcutContextMenu.style.display = 'block';
+                shortcutContextMenu.style.left = e.pageX + 'px';
+                shortcutContextMenu.style.top = e.pageY + 'px';
+            };
+        }
+    }
+    // Patch attachShortcutContextMenu to always call this
+    const prevAttachShortcutContextMenu = attachShortcutContextMenu;
+    attachShortcutContextMenu = function() {
+        prevAttachShortcutContextMenu();
+        attachContextMenuToBuiltInShortcuts();
+    };
+    // Call once on load
+    attachContextMenuToBuiltInShortcuts();
 });
