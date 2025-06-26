@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>New Tab</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="timezone-selector-container" style="position:fixed;top:16px;left:120px;z-index:1000;">
+        <select id="timezone-selector" style="padding:4px 8px;font-size:14px;border-radius:5px;border:none;background:#eaf4fd;box-shadow:0 2px 8px rgba(58,141,222,0.08);color:#2561a7;font-weight:600;outline:none;appearance:auto;">
+            <option value="local">Local Time</option>
+            <option value="America/New_York">New York</option>
+            <option value="Europe/London">London</option>
+            <option value="Europe/Paris">Paris</option>
+            <option value="Europe/Berlin">Berlin</option>
+            <option value="Asia/Shanghai">Shanghai</option>
+            <option value="Asia/Tokyo">Tokyo</option>
+            <option value="Asia/Hong_Kong">Hong Kong</option>
+            <option value="Asia/Singapore">Singapore</option>
+            <option value="Australia/Sydney">Sydney</option>
+            <option value="America/Los_Angeles">Los Angeles</option>
+        </select>
+    </div>
+
+    <div id="weather-info-container" style="position:fixed;top:16px;right:40px;z-index:1000;">
+    </div>
+
+    <div class="sidebar">
+        <div class="sidebar-avatar">
+            <img src="https://www.gravatar.com/avatar/?d=mp" alt="Avatar" id="sidebar-avatar">
+        </div>
+        <div class="sidebar-categories" id="sidebar-categories">
+            <div class="sidebar-category">Common</div>
+            <div class="sidebar-category">Code</div>
+            <div class="sidebar-category">Design</div>
+            <div class="sidebar-category">AI</div>
+            <div class="sidebar-category">Info</div>
+            <div class="sidebar-category">Learn</div>
+            <div class="sidebar-category">Fun</div>
+        </div>
+        <button id="add-category-btn" class="sidebar-add-btn">＋ Add</button>
+        <div class="sidebar-gear">
+            <button id="sidebar-gear-btn" aria-label="Settings">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 5 15.4a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 5 8.6a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 8 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09c0 .66.39 1.25 1 1.51a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.66 0 1.25.39 1.51 1H21a2 2 0 0 1 0 4h-.09c-.26 0-.51.1-.7.29-.19.19-.29.44-.29.7z"/></svg>
+            </button>
+        </div>
+    </div>
+    <div class="main-content">
+        <div class="container">
+            <div class="datetime">
+                <div id="time"></div>
+                <div id="date"></div>
+            </div>
+            <form id="search-form" action="https://www.google.com/search" method="get" autocomplete="off">
+                <div class="search-wrapper">
+                    <button id="engine-btn" type="button" aria-label="Select search engine">
+                        <img id="engine-icon" src="https://www.google.com/favicon.ico" alt="Search Engine" width="24" height="24">
+                    </button>
+                    <input type="text" name="q" id="search-input" placeholder="Search..." autofocus>
+                    <div id="engine-selector" class="hidden">
+                        <button type="button" class="engine-option" data-engine="google" data-action="https://www.google.com/search" data-icon="https://www.google.com/favicon.ico">
+                            <img src="https://www.google.com/favicon.ico" alt="Google" width="24" height="24"> Google
+                        </button>
+                        <button type="button" class="engine-option" data-engine="bing" data-action="https://www.bing.com/search" data-icon="https://www.bing.com/favicon.ico">
+                            <img src="https://www.bing.com/favicon.ico" alt="Bing" width="24" height="24"> Bing
+                        </button>
+                        <button type="button" class="engine-option" data-engine="duckduckgo" data-action="https://duckduckgo.com/" data-icon="https://duckduckgo.com/favicon.ico">
+                            <img src="https://duckduckgo.com/favicon.ico" alt="DuckDuckGo" width="24" height="24"> DuckDuckGo
+                        </button>
+                        <button type="button" id="add-engine-btn" class="engine-add-btn">＋ Add</button>
+                    </div>
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </div>
+            </form>
+            <div id="shortcuts-area">
+                <div class="shortcuts-list" data-category="Common">
+                    <a class="shortcut" href="https://www.google.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=google.com" alt="Google">Google
+                    </a>
+                    <a class="shortcut" href="https://www.youtube.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=youtube.com" alt="YouTube">YouTube
+                    </a>
+                </div>
+                <div class="shortcuts-list" data-category="Code" style="display:none">
+                    <a class="shortcut" href="https://github.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=github.com" alt="GitHub">GitHub
+                    </a>
+                    <a class="shortcut" href="https://stackoverflow.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=stackoverflow.com" alt="Stack Overflow">Stack Overflow
+                    </a>
+                    <a class="shortcut" href="https://gitlab.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=gitlab.com" alt="GitLab">GitLab
+                    </a>
+                    <a class="shortcut" href="https://bitbucket.org" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=bitbucket.org" alt="Bitbucket">Bitbucket
+                    </a>
+                    <a class="shortcut" href="https://codepen.io" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=codepen.io" alt="CodePen">CodePen
+                    </a>
+                    <a class="shortcut" href="https://jsfiddle.net" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=jsfiddle.net" alt="JSFiddle">JSFiddle
+                    </a>
+                    <a class="shortcut" href="https://codesandbox.io" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=codesandbox.io" alt="CodeSandbox">CodeSandbox
+                    </a>
+                    <a class="shortcut" href="https://replit.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=replit.com" alt="Replit">Replit
+                    </a>
+                    <a class="shortcut" href="https://leetcode.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=leetcode.com" alt="LeetCode">LeetCode
+                    </a>
+                    <a class="shortcut" href="https://w3schools.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=w3schools.com" alt="W3Schools">W3Schools
+                    </a>
+                </div>
+                <div class="shortcuts-list" data-category="Design" style="display:none">
+                    <a class="shortcut" href="https://dribbble.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=dribbble.com" alt="Dribbble">Dribbble
+                    </a>
+                    <a class="shortcut" href="https://figma.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=figma.com" alt="Figma">Figma
+                    </a>
+                </div>
+                <div class="shortcuts-list" data-category="AI" style="display:none">
+                    <a class="shortcut" href="https://chat.openai.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=openai.com" alt="ChatGPT">ChatGPT
+                    </a>
+                    <a class="shortcut" href="https://gemini.google.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=google.com" alt="Gemini">Gemini
+                    </a>
+                    <a class="shortcut" href="https://claude.ai" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=claude.ai" alt="Claude">Claude
+                    </a>
+                    <a class="shortcut" href="https://perplexity.ai" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=perplexity.ai" alt="Perplexity">Perplexity
+                    </a>
+                    <a class="shortcut" href="https://copilot.microsoft.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=microsoft.com" alt="Copilot">Copilot
+                    </a>
+                    <a class="shortcut" href="https://midjourney.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=midjourney.com" alt="Midjourney">Midjourney
+                    </a>
+                    <a class="shortcut" href="https://huggingface.co" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=huggingface.co" alt="Hugging Face">Hugging Face
+                    </a>
+                    <a class="shortcut" href="https://character.ai" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=character.ai" alt="Character.AI">Character.AI
+                    </a>
+                    <a class="shortcut" href="https://www.bing.com/chat" target="_blank">
+                        <img class="shortcut-icon" src="https://www.bing.com/favicon.ico" alt="Bing Chat">Bing Chat
+                    </a>
+                    <a class="shortcut" href="https://stablediffusionweb.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=stablediffusionweb.com" alt="Stable Diffusion">Stable Diffusion
+                    </a>
+                </div>
+                <div class="shortcuts-list" data-category="Learn" style="display:none">
+                    <a class="shortcut" href="https://www.khanacademy.org" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=khanacademy.org" alt="Khan Academy">Khan Academy
+                    </a>
+                    <a class="shortcut" href="https://www.coursera.org" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=coursera.org" alt="Coursera">Coursera
+                    </a>
+                    <a class="shortcut" href="https://www.udemy.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=udemy.com" alt="Udemy">Udemy
+                    </a>
+                    <a class="shortcut" href="https://www.edx.org" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=edx.org" alt="edX">edX
+                    </a>
+                    <a class="shortcut" href="https://www.udacity.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=udacity.com" alt="Udacity">Udacity
+                    </a>
+                    <a class="shortcut" href="https://www.skillshare.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=skillshare.com" alt="Skillshare">Skillshare
+                    </a>
+                    <a class="shortcut" href="https://www.linkedin.com/learning" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=linkedin.com" alt="LinkedIn Learning">LinkedIn Learning
+                    </a>
+                    <a class="shortcut" href="https://www.futurelearn.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=futurelearn.com" alt="FutureLearn">FutureLearn
+                    </a>
+                    <a class="shortcut" href="https://www.masterclass.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=masterclass.com" alt="MasterClass">MasterClass
+                    </a>
+                    <a class="shortcut" href="https://www.pluralsight.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=pluralsight.com" alt="Pluralsight">Pluralsight
+                    </a>
+                </div>
+                <div class="shortcuts-list" data-category="Fun" style="display:none">
+                    <!-- Games -->
+                    <a class="shortcut" href="https://store.steampowered.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=steampowered.com" alt="Steam">Steam
+                    </a>
+                    <a class="shortcut" href="https://www.roblox.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=roblox.com" alt="Roblox">Roblox
+                    </a>
+                    <a class="shortcut" href="https://www.epicgames.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=epicgames.com" alt="Epic Games">Epic Games
+                    </a>
+                    <!-- Live Broadcast -->
+                    <a class="shortcut" href="https://www.twitch.tv" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=twitch.tv" alt="Twitch">Twitch
+                    </a>
+                    <a class="shortcut" href="https://www.youtube.com/live" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=youtube.com" alt="YouTube Live">YouTube Live
+                    </a>
+                    <a class="shortcut" href="https://www.kick.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=kick.com" alt="Kick">Kick
+                    </a>
+                    <!-- Video -->
+                    <a class="shortcut" href="https://www.youtube.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=youtube.com" alt="YouTube">YouTube
+                    </a>
+                    <a class="shortcut" href="https://www.netflix.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=netflix.com" alt="Netflix">Netflix
+                    </a>
+                    <a class="shortcut" href="https://www.tiktok.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=tiktok.com" alt="TikTok">TikTok
+                    </a>
+                    <!-- Comic -->
+                    <a class="shortcut" href="https://www.webtoons.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=webtoons.com" alt="Webtoons">Webtoons
+                    </a>
+                    <a class="shortcut" href="https://mangadex.org" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=mangadex.org" alt="MangaDex">MangaDex
+                    </a>
+                    <a class="shortcut" href="https://www.comixology.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=comixology.com" alt="Comixology">Comixology
+                    </a>
+                    <!-- Novel -->
+                    <a class="shortcut" href="https://www.wattpad.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=wattpad.com" alt="Wattpad">Wattpad
+                    </a>
+                    <a class="shortcut" href="https://www.webnovel.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=webnovel.com" alt="Webnovel">Webnovel
+                    </a>
+                    <a class="shortcut" href="https://www.royalroad.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=royalroad.com" alt="Royal Road">Royal Road
+                    </a>
+                </div>
+                <div class="shortcuts-list" data-category="Info" style="display:none">
+                    <!-- News -->
+                    <a class="shortcut" href="https://www.cnn.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=cnn.com" alt="CNN">CNN
+                    </a>
+                    <a class="shortcut" href="https://www.bbc.com/news" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=bbc.com" alt="BBC News">BBC News
+                    </a>
+                    <a class="shortcut" href="https://www.nytimes.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=nytimes.com" alt="NY Times">NY Times
+                    </a>
+                    <a class="shortcut" href="https://www.reuters.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=reuters.com" alt="Reuters">Reuters
+                    </a>
+                    <!-- Investment -->
+                    <a class="shortcut" href="https://www.bloomberg.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=bloomberg.com" alt="Bloomberg">Bloomberg
+                    </a>
+                    <a class="shortcut" href="https://www.cnbc.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=cnbc.com" alt="CNBC">CNBC
+                    </a>
+                    <a class="shortcut" href="https://finance.yahoo.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=yahoo.com" alt="Yahoo Finance">Yahoo Finance
+                    </a>
+                    <a class="shortcut" href="https://www.wsj.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=wsj.com" alt="WSJ">WSJ
+                    </a>
+                    <!-- Employment -->
+                    <a class="shortcut" href="https://www.linkedin.com/jobs" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=linkedin.com" alt="LinkedIn Jobs">LinkedIn Jobs
+                    </a>
+                    <a class="shortcut" href="https://www.indeed.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=indeed.com" alt="Indeed">Indeed
+                    </a>
+                    <a class="shortcut" href="https://www.glassdoor.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=glassdoor.com" alt="Glassdoor">Glassdoor
+                    </a>
+                    <a class="shortcut" href="https://www.monster.com" target="_blank">
+                        <img class="shortcut-icon" src="https://www.google.com/s2/favicons?sz=32&domain=monster.com" alt="Monster">Monster
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="settings-modal" class="settings-modal hidden">
+        <div class="settings-modal-content">
+            <div class="settings-modal-header">
+                <span>Settings</span>
+                <button id="settings-close-btn" aria-label="Close">&times;</button>
+            </div>
+            <div class="settings-section">
+                <h3>Open Choice</h3>
+                <label><input type="checkbox" id="open-search-newtab"> Open search result in new tab</label><br>
+                <label><input type="checkbox" id="open-shortcut-newtab"> Open shortcut in new tab</label>
+            </div>
+            <div class="settings-section">
+                <h3>Search Box Customize</h3>
+                <label>Height: <input type="range" id="search-height-slider" min="36" max="100" value="54"> <span id="search-height-value">54</span>px</label>
+            </div>
+            <div class="settings-section">
+                <h3>Shortcut Customize</h3>
+                <label>Icon Size: <input type="range" id="shortcut-icon-size-slider" min="16" max="64" value="22"> <span id="shortcut-icon-size-value">22</span>px</label><br>
+                <label><input type="checkbox" id="shortcut-square-toggle"> Square style (icon above name)</label>
+            </div>
+            <div class="settings-section">
+                <h3>Date/Time Customize</h3>
+                <label>Font Size: <input type="range" id="datetime-font-size-slider" min="16" max="64" value="40"> <span id="datetime-font-size-value">40</span>px</label>
+            </div>
+            <div class="settings-section">
+                <h3>Wallpaper</h3>
+                <input type="file" id="set-wallpaper-input" accept="image/*">
+            </div>
+            <div class="settings-section">
+                <h3>Layout</h3>
+                <label><input type="checkbox" id="simple-mode-toggle"> Simple mode (search box only, centered)</label>
+            </div>
+            <div class="settings-section">
+                <h3>Backup and Sync</h3>
+                <button id="export-data-btn">Export to Local</button>
+                <button id="import-data-btn">Import from File</button>
+            </div>
+            <div class="settings-section">
+                <h3>Reset</h3>
+                <button id="reset-settings-btn">Reset All Settings</button>
+            </div>
+            <div class="settings-section">
+                <h3>Motto</h3>
+                <input type="text" id="motto-input" placeholder="Enter your motto..." style="width:100%;margin-top:4px;">
+            </div>
+            <div class="settings-section">
+                <h3>About</h3>
+                <div>Lovely author ❤️</div>
+            </div>
+        </div>
+    </div>
+    <div id="motto-container">Empower your day. One tab at a time.</div>
+    <script src="newtab.js"></script>
+</body>
+</html>
