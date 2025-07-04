@@ -616,7 +616,6 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.onload = function(evt) {
             sidebarAvatarImg.src = evt.target.result;
             localStorage.setItem('profileAvatar', evt.target.result);
-            updateDaysLivedShortcut(); // update shortcut icon
         };
         reader.readAsDataURL(file);
     };
@@ -624,7 +623,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedAvatar = localStorage.getItem('profileAvatar');
     if (savedAvatar) {
         sidebarAvatarImg.src = savedAvatar;
-        updateDaysLivedShortcut();
     }
 
     // --- Custom context menu for sidebar categories ---
@@ -1014,17 +1012,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('shortcut-delete').onclick = function(e) {
         if (!contextTargetShortcut) return;
         shortcutContextMenu.style.display = 'none';
-        // Handle built-in shortcuts
-        if (contextTargetShortcut.classList.contains('days-lived-shortcut')) {
-            contextTargetShortcut.remove();
-            localStorage.setItem('hideDaysLivedShortcut', 'true');
-            return;
-        }
-        if (contextTargetShortcut.classList.contains('day-week-shortcut')) {
-            contextTargetShortcut.remove();
-            localStorage.setItem('hideDayWeekShortcut', 'true');
-            return;
-        }
+
         // Normal shortcut
         contextTargetShortcut.remove();
         persistCategoriesAndShortcuts();
@@ -1265,26 +1253,29 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- Helper to persist categories and shortcuts ---
-    function persistCategoriesAndShortcuts() {
-        const categories = [];
-        document.querySelectorAll('.sidebar-category').forEach(cat => {
-            if (cat.id === 'add-category-btn') return;
-            const name = cat.textContent;
-            const shortcuts = [];
-            document.querySelectorAll('.shortcuts-list').forEach(list => {
-                if (list.getAttribute('data-category') === name) {
-                    list.querySelectorAll('.shortcut').forEach(a => {
-                        shortcuts.push({
-                            name: a.textContent,
-                            url: a.href
-                        });
+    // --- Helper to persist categories and shortcuts ---
+function persistCategoriesAndShortcuts() {
+    // Only persist user-defined shortcuts (for export/import)
+    const categories = [];
+    document.querySelectorAll('.sidebar-category').forEach(cat => {
+        if (cat.id === 'add-category-btn') return;
+        const name = cat.textContent;
+        const shortcuts = [];
+        document.querySelectorAll('.shortcuts-list').forEach(list => {
+            if (list.getAttribute('data-category') === name) {
+                list.querySelectorAll('.shortcut').forEach(a => {
+                    // No need to skip built-in shortcuts anymore
+                    shortcuts.push({
+                        name: a.textContent,
+                        url: a.href
                     });
-                }
-            });
-            categories.push({ name, shortcuts });
+                });
+            }
         });
-        localStorage.setItem('categoriesAndShortcuts', JSON.stringify(categories));
-    }
+        categories.push({ name, shortcuts });
+    });
+    localStorage.setItem('categoriesAndShortcuts', JSON.stringify(categories));
+}
     // --- Helper to persist search engines ---
     function persistSearchEngines() {
         const engines = [];
@@ -1405,361 +1396,157 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initial enable on page load
     setupShortcutDragAndDrop();
 
-    // --- Built-in shortcut: Days Lived (icon = profile picture) ---
-    function getDaysLived(birthdayStr) {
-        if (!birthdayStr) return null;
-        const start = new Date(birthdayStr);
-        if (isNaN(start)) return null;
-        const now = new Date();
-        const diff = now - start;
-        return Math.floor(diff / (1000 * 60 * 60 * 24));
-    }
-    function getProfileAvatarUrl() {
-        const savedAvatar = localStorage.getItem('profileAvatar');
-        return savedAvatar || 'https://www.gravatar.com/avatar/?d=mp';
-    }
-    function updateDaysLivedShortcut() {
-        if (localStorage.getItem('hideDaysLivedShortcut') === 'true') return;
-        const shortcutsArea = document.getElementById('shortcuts-area');
-        const list = shortcutsArea && shortcutsArea.querySelector('.shortcuts-list[data-category="Common"]');
-        if (!list) return;
-        let shortcut = list.querySelector('.shortcut.days-lived-shortcut');
-        let birthday = localStorage.getItem('daysLivedBirthday');
-        let days = getDaysLived(birthday);
-        let label = days !== null ? `Days Lived: ${days}` : 'Set Birthday';
-        const avatarUrl = getProfileAvatarUrl();
-        if (!shortcut) {
-            shortcut = document.createElement('a');
-            shortcut.className = 'shortcut days-lived-shortcut';
-            shortcut.href = '#';
-            shortcut.style.background = '#eaf4fd';
-            shortcut.style.color = '#2561a7';
-            shortcut.innerHTML = `<img class="shortcut-icon" src="${avatarUrl}" alt="Days Lived" style="background:#fff;">${label}`;
-            shortcut.onclick = function(e) {
-                e.preventDefault();
-                showBirthdayPicker();
-            };
-            list.insertBefore(shortcut, list.firstChild);
-        } else {
-            shortcut.innerHTML = `<img class="shortcut-icon" src="${avatarUrl}" alt="Days Lived" style="background:#fff;">${label}`;
-        }
-    }
-    function showBirthdayPicker() {
-        let picker = document.getElementById('days-lived-picker');
-        if (!picker) {
-            picker = document.createElement('div');
-            picker.id = 'days-lived-picker';
-            picker.style.position = 'fixed';
-            picker.style.left = 0;
-            picker.style.top = 0;
-            picker.style.width = '100vw';
-            picker.style.height = '100vh';
-            picker.style.background = 'rgba(0,0,0,0.18)';
-            picker.style.display = 'flex';
-            picker.style.alignItems = 'center';
-            picker.style.justifyContent = 'center';
-            picker.style.zIndex = 10001;
-            picker.innerHTML = `
-                <div style="background:#fff;min-width:240px;max-width:90vw;padding:18px 24px;border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,0.18);font-family:sans-serif;">
-                    <label for="birthday-input" style="font-size:15px;">Select your birthday</label><br>
-                    <input type="date" id="birthday-input" style="margin:10px 0 18px 0;font-size:15px;padding:4px 8px;">
-                    <div style="text-align:right;">
-                        <button id="birthday-ok" style="padding:5px 18px;font-size:14px;border-radius:4px;border:none;background:#3a8dde;color:#fff;cursor:pointer;margin-right:8px;">OK</button>
-                        <button id="birthday-cancel" style="padding:5px 18px;font-size:14px;border-radius:4px;border:none;background:#eee;color:#333;cursor:pointer;">Cancel</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(picker);
-        } else {
-            picker.style.display = 'flex';
-        }
-        const input = picker.querySelector('#birthday-input');
-        input.value = localStorage.getItem('daysLivedBirthday') || '';
-        input.max = new Date().toISOString().slice(0,10);
-        picker.querySelector('#birthday-ok').onclick = function() {
-            if (input.value) {
-                localStorage.setItem('daysLivedBirthday', input.value);
-                updateDaysLivedShortcut();
-            }
-            picker.style.display = 'none';
-        };
-        picker.querySelector('#birthday-cancel').onclick = function() {
-            picker.style.display = 'none';
-        };
-        picker.onclick = function(e) {
-            if (e.target === picker) picker.style.display = 'none';
-        };
-        input.focus();
-    }
-    // Update on load and whenever categories/shortcuts change
-    updateDaysLivedShortcut();
-    const oldPersistCategoriesAndShortcuts = persistCategoriesAndShortcuts;
-    persistCategoriesAndShortcuts = function() {
-        oldPersistCategoriesAndShortcuts();
-        updateDaysLivedShortcut();
-    };
-
-    // Patch avatar change handler to update shortcut icon
-    if (avatarInput && sidebarAvatarImg) {
-        const origAvatarOnChange = avatarInput.onchange;
-        avatarInput.onchange = function(e) {
-            if (origAvatarOnChange) origAvatarOnChange.call(this, e);
-            updateDaysLivedShortcut();
-        };
-    }
-    // On load, also update shortcut icon
-    updateDaysLivedShortcut();
-
-    // --- Built-in shortcut: Day/Week of Year ---
-    function getDayOfYear(date) {
-        const start = new Date(date.getFullYear(), 0, 0);
-        const diff = date - start + ((start.getTimezoneOffset() - date.getTimezoneOffset()) * 60 * 1000);
-        return Math.floor(diff / (1000 * 60 * 60 * 24));
-    }
-    function getWeekOfYear(date) {
-        // ISO week: weeks start on Monday, week 1 is the week with the first Thursday of the year
-        const target = new Date(date.valueOf());
-        const dayNr = (date.getDay() + 6) % 7;
-        target.setDate(target.getDate() - dayNr + 3);
-        const firstThursday = new Date(target.getFullYear(),0,4);
-        const diff = target - firstThursday;
-        return 1 + Math.round(diff / (7 * 24 * 60 * 60 * 1000));
-    }
-    function updateDayWeekShortcut() {
-        if (localStorage.getItem('hideDayWeekShortcut') === 'true') return;
-        const shortcutsArea = document.getElementById('shortcuts-area');
-        const list = shortcutsArea && shortcutsArea.querySelector('.shortcuts-list[data-category="Common"]');
-        if (!list) return;
-        let shortcut = list.querySelector('.shortcut.day-week-shortcut');
-        const now = new Date();
-        const dayNum = getDayOfYear(now);
-        const weekNum = getWeekOfYear(now);
-        const label = `Day ${dayNum} · Week ${weekNum}`;
-        if (!shortcut) {
-            shortcut = document.createElement('a');
-            shortcut.className = 'shortcut day-week-shortcut';
-            shortcut.href = '#';
-            shortcut.style.background = '#f7fbe7';
-            shortcut.style.color = '#4b7b1c';
-            shortcut.innerHTML = `<img class="shortcut-icon" src="https://cdn-icons-png.flaticon.com/512/2921/2921222.png" alt="Day/Week" style="background:#fff;">${label}`;
-            shortcut.onclick = function(e) {
-                e.preventDefault();
-                showDayWeekInfoModal(dayNum, weekNum);
-            };
-            // Insert after Days Lived shortcut if present, else at top
-            const daysLived = list.querySelector('.shortcut.days-lived-shortcut');
-            if (daysLived && daysLived.nextSibling) {
-                list.insertBefore(shortcut, daysLived.nextSibling);
-            } else {
-                list.insertBefore(shortcut, list.firstChild);
-            }
-        } else {
-            shortcut.innerHTML = `<img class="shortcut-icon" src="https://cdn-icons-png.flaticon.com/512/2921/2921222.png" alt="Day/Week" style="background:#fff;">${label}`;
-        }
-    }
-    function showDayWeekInfoModal(dayNum, weekNum) {
-        let modal = document.getElementById('day-week-info-modal');
-        if (!modal) {
-            modal = document.createElement('div');
-            modal.id = 'day-week-info-modal';
-            modal.style.position = 'fixed';
-            modal.style.left = 0;
-            modal.style.top = 0;
-            modal.style.width = '100vw';
-            modal.style.height = '100vh';
-            modal.style.background = 'rgba(0,0,0,0.18)';
-            modal.style.display = 'flex';
-            modal.style.alignItems = 'center';
-            modal.style.justifyContent = 'center';
-            modal.style.zIndex = 10001;
-            modal.innerHTML = `
-                <div style="background:#fff;min-width:240px;max-width:90vw;padding:18px 24px;border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,0.18);font-family:sans-serif;">
-                    <div style="font-size:1.2em;margin-bottom:10px;">Today is day <b>${dayNum}</b> and week <b>${weekNum}</b> of this year.</div>
-                    <div style="font-size:0.98em;color:#666;">• Day number: Jan 1 = 1<br>• Week number: ISO 8601 (weeks start on Monday, week 1 has the first Thursday)</div>
-                    <div style="text-align:right;margin-top:18px;">
-                        <button id="day-week-info-close" style="padding:5px 18px;font-size:14px;border-radius:4px;border:none;background:#eee;color:#333;cursor:pointer;">Close</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modal);
-        } else {
-            modal.querySelector('b').textContent = dayNum;
-            modal.querySelectorAll('b')[1].textContent = weekNum;
-            modal.style.display = 'flex';
-        }
-        modal.querySelector('#day-week-info-close').onclick = function() {
-            modal.style.display = 'none';
-        };
-        modal.onclick = function(e) {
-            if (e.target === modal) modal.style.display = 'none';
-        };
-    }
-    // Update on load and whenever categories/shortcuts change
-    updateDayWeekShortcut();
-    const oldPersistCategoriesAndShortcuts2 = persistCategoriesAndShortcuts;
-    persistCategoriesAndShortcuts = function() {
-        oldPersistCategoriesAndShortcuts2();
-        updateDayWeekShortcut();
-    };
-    // Update every day at midnight
-    setInterval(updateDayWeekShortcut, 60 * 1000); // check every minute in case of date change
-
     // --- Weather Widget in #weather-info-container (upper right) ---
-    (function setupWeatherWidgetV2() {
-        const container = document.getElementById('weather-info-container');
-        if (!container) return;
-        container.style.cursor = 'pointer';
-        container.style.background = '#fff';
-        container.style.border = '1px solid #e0e0e0';
-        container.style.borderRadius = '8px';
-        container.style.padding = '12px 18px 12px 18px';
-        container.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
-        container.style.fontSize = '15px';
-        container.style.display = 'inline-block';
-        container.style.minWidth = '180px';
-        container.title = 'Click to set city';
+(function setupWeatherWidgetV2() {
+    const container = document.getElementById('weather-info-container');
+    if (!container) return;
+    container.style.cursor = 'pointer';
+    container.style.background = '#fff';
+    container.style.border = '1px solid #e0e0e0';
+    container.style.borderRadius = '8px';
+    container.style.padding = '12px 6px 12px 6px';
+    container.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+    container.style.fontSize = '15px';
+    container.style.display = 'inline-block';
+    container.style.minWidth = '180px';
+    container.title = 'Click to set city';
 
-        // Modal for city input
-        let weatherModal = document.getElementById('weather-city-modal');
-        if (!weatherModal) {
-            weatherModal = document.createElement('div');
-            weatherModal.id = 'weather-city-modal';
-            weatherModal.style.position = 'fixed';
-            weatherModal.style.left = 0;
-            weatherModal.style.top = 0;
-            weatherModal.style.width = '100vw';
-            weatherModal.style.height = '100vh';
-            weatherModal.style.background = 'rgba(0,0,0,0.18)';
-            weatherModal.style.display = 'none';
-            weatherModal.style.alignItems = 'center';
-            weatherModal.style.justifyContent = 'center';
-            weatherModal.style.zIndex = 10011;
-            weatherModal.innerHTML = `
-                <div style="background:#fff;min-width:240px;max-width:90vw;padding:18px 24px;border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,0.18);font-family:sans-serif;">
-                    <label for="weather-city-input" style="font-size:15px;">Enter city name</label><br>
-                    <input type="text" id="weather-city-input" style="margin:10px 0 18px 0;font-size:15px;padding:4px 8px;width:100%;">
-                    <div style="text-align:right;">
-                        <button id="weather-city-ok" style="padding:5px 18px;font-size:14px;border-radius:4px;border:none;background:#3a8dde;color:#fff;cursor:pointer;margin-right:8px;">OK</button>
-                        <button id="weather-city-cancel" style="padding:5px 18px;font-size:14px;border-radius:4px;border:none;background:#eee;color:#333;cursor:pointer;">Cancel</button>
-                    </div>
+    // Modal for city input
+    let weatherModal = document.getElementById('weather-city-modal');
+    if (!weatherModal) {
+        weatherModal = document.createElement('div');
+        weatherModal.id = 'weather-city-modal';
+        weatherModal.style.position = 'fixed';
+        weatherModal.style.left = 0;
+        weatherModal.style.top = 0;
+        weatherModal.style.width = '100vw';
+        weatherModal.style.height = '100vh';
+        weatherModal.style.background = 'rgba(0,0,0,0.18)';
+        weatherModal.style.display = 'none';
+        weatherModal.style.alignItems = 'center';
+        weatherModal.style.justifyContent = 'center';
+        weatherModal.style.zIndex = 10011;
+        weatherModal.innerHTML = `
+            <div style="background:#fff;min-width:240px;max-width:90vw;padding:18px 24px;border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,0.18);font-family:sans-serif;">
+                <label for="weather-city-input" style="font-size:15px;">Enter city name</label><br>
+                <input type="text" id="weather-city-input" style="margin:10px 0 18px 0;font-size:15px;padding:4px 8px;width:100%;">
+                <div style="text-align:right;">
+                    <button id="weather-city-ok" style="padding:5px 18px;font-size:14px;border-radius:4px;border:none;background:#3a8dde;color:#fff;cursor:pointer;margin-right:8px;">OK</button>
+                    <button id="weather-city-cancel" style="padding:5px 18px;font-size:14px;border-radius:4px;border:none;background:#eee;color:#333;cursor:pointer;">Cancel</button>
                 </div>
-            `;
-            document.body.appendChild(weatherModal);
-        }
-        function showWeatherModal() {
-            const input = weatherModal.querySelector('#weather-city-input');
-            input.value = localStorage.getItem('weatherCity') || 'London';
-            weatherModal.style.display = 'flex';
-            input.focus();
-            weatherModal.querySelector('#weather-city-ok').onclick = function() {
-                const city = input.value.trim();
-                if (city) {
-                    localStorage.setItem('weatherCity', city);
-                    fetchAndShowWeather();
-                }
-                weatherModal.style.display = 'none';
-            };
-            weatherModal.querySelector('#weather-city-cancel').onclick = function() {
-                weatherModal.style.display = 'none';
-            };
-            weatherModal.onclick = function(e) {
-                if (e.target === weatherModal) weatherModal.style.display = 'none';
-            };
-        }
-        container.onclick = showWeatherModal;
-        // Fetch weather for city, fallback to London
-        async function fetchAndShowWeather() {
-            const city = localStorage.getItem('weatherCity') || 'London';
-            container.innerHTML = `<div style='display:flex;align-items:center;gap:7px;'><svg width="22" height="22" style="vertical-align:middle;opacity:0.7;" viewBox="0 0 24 24"><path fill="#3a8dde" d="M6 19a7 7 0 1 1 12.9-4.1A5 5 0 1 1 18 19H6z"/></svg> <span style='font-weight:500;'>Weather</span></div><div style='margin-top:4px;'>Loading...</div>`;
-            // Geocode city to lat/lon
-            let lat = 51.5072, lon = -0.1276; // London default
-            try {
-                const geo = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`);
-                const geoData = await geo.json();
-                if (geoData.results && geoData.results[0]) {
-                    lat = geoData.results[0].latitude;
-                    lon = geoData.results[0].longitude;
-                }
-            } catch (e) {}
-            // Fetch weather
-            try {
-                const weather = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode&forecast_days=3&timezone=auto`);
-                const w = await weather.json();
-                if (w && w.daily && w.daily.time) {
-                    const days = w.daily.time.map((date, i) => {
-                        const tmax = w.daily.temperature_2m_max[i];
-                        const tmin = w.daily.temperature_2m_min[i];
-                        const code = w.daily.weathercode[i];
-                        const icon = weatherIcon(code);
-                        const label = i === 0 ? 'Today' : (i === 1 ? 'Tomorrow' : (new Date(date)).toLocaleDateString(undefined, { weekday: 'short' }));
-                        return `<div style='display:flex;align-items:center;gap:7px;justify-content:space-between;'><span style='font-size:1.2em;width:1.8em;text-align:center;'>${icon}</span> <span style='font-size:0.98em;width:5.5em;'>${label}</span> <span style='color:#3a8dde;font-size:1em;text-align:right;min-width:56px;display:inline-block;'>${Math.round(tmax)}°/${Math.round(tmin)}°</span></div>`;
-                    }).join('');
-                    container.innerHTML = `
-                    <div style='display:flex;align-items:center;justify-content:space-between;'>
-                        <div style='display:flex;align-items:center;gap:7px;'>
-                            <svg width="22" height="22" style="vertical-align:middle;opacity:0.7;" viewBox="0 0 24 24"><path fill="#3a8dde" d="M6 19a7 7 0 1 1 12.9-4.1A5 5 0 1 1 18 19H6z"/></svg>
-                            <span style='font-weight:500;'>Weather</span>
-                        </div>
-                        <span style='font-size:0.97em;color:#888;text-align:right;min-width:56px;display:inline-block;'>${city}</span>
-                    </div>
-                    <div style='margin-top:4px;'>${days}</div>
-                `;
-                } else {
-                    container.innerHTML = `<div style='display:flex;align-items:center;justify-content:space-between;'><div style='display:flex;align-items:center;gap:7px;'><svg width="22" height="22" style="vertical-align:middle;opacity:0.7;" viewBox="0 0 24 24"><path fill="#3a8dde" d="M6 19a7 7 0 1 1 12.9-4.1A5 5 0 1 1 18 19H6z"/></svg> <span style='font-weight:500;'>Weather</span></div><span style='font-size:0.97em;color:#888;text-align:right;min-width:56px;display:inline-block;'>${city}</span></div><div style='margin-top:4px;'>Weather unavailable</div>`;
-                }
-            } catch (e) {
-                container.innerHTML = `<div style='display:flex;align-items:center;justify-content:space-between;'><div style='display:flex;align-items:center;gap:7px;'><svg width="22" height="22" style="vertical-align:middle;opacity:0.7;" viewBox="0 0 24 24"><path fill="#3a8dde" d="M6 19a7 7 0 1 1 12.9-4.1A5 5 0 1 1 18 19H6z"/></svg> <span style='font-weight:500;'>Weather</span></div><span style='font-size:0.97em;color:#888;text-align:right;min-width:56px;display:inline-block;'>${city}</span></div><div style='margin-top:4px;'>Weather unavailable</div>`;
+            </div>
+        `;
+        document.body.appendChild(weatherModal);
+    }
+    function showWeatherModal() {
+        const input = weatherModal.querySelector('#weather-city-input');
+        input.value = localStorage.getItem('weatherCity') || 'London';
+        weatherModal.style.display = 'flex';
+        input.focus();
+        weatherModal.querySelector('#weather-city-ok').onclick = function() {
+            const city = input.value.trim();
+            if (city) {
+                localStorage.setItem('weatherCity', city);
+                fetchAndShowWeather();
             }
-        }
-        // Weather code to emoji/icon
-        function weatherIcon(code) {
-            // Open-Meteo weather codes: https://open-meteo.com/en/docs#api_form
-            if (code === 0) return '☀️'; // Clear
-            if (code === 1 || code === 2) return '🌤️'; // Mainly clear/partly cloudy
-            if (code === 3) return '☁️'; // Overcast
-            if (code >= 45 && code <= 48) return '🌫️'; // Fog
-            if (code >= 51 && code <= 67) return '🌦️'; // Drizzle
-            if (code >= 71 && code <= 77) return '❄️'; // Snow
-            if (code >= 80 && code <= 82) return '🌧️'; // Rain showers
-            if (code >= 95 && code <= 99) return '⛈️'; // Thunderstorm
-            return '🌡️';
-        }
-        fetchAndShowWeather();
-        // Optionally, refresh every 30min
-        setInterval(fetchAndShowWeather, 30*60*1000);
-    })();
+            weatherModal.style.display = 'none';
+        };
+        weatherModal.querySelector('#weather-city-cancel').onclick = function() {
+            weatherModal.style.display = 'none';
+        };
+        weatherModal.onclick = function(e) {
+            if (e.target === weatherModal) weatherModal.style.display = 'none';
+        };
+    }
+    container.onclick = showWeatherModal;
+    
+    // Fetch weather for city, with caching logic
+    async function fetchAndShowWeather() {
+        const cacheKey = 'weatherCache';
+        const cacheDuration = 30 * 60 * 1000; // 30 minutes
+        const currentCity = localStorage.getItem('weatherCity') || 'London';
 
-    // --- Ensure shortcut context menu is attached to built-in shortcuts ---
-    function attachContextMenuToBuiltInShortcuts() {
-        // Days Lived shortcut
-        const daysLivedShortcut = document.querySelector('.shortcut.days-lived-shortcut');
-        if (daysLivedShortcut) {
-            daysLivedShortcut.oncontextmenu = function(e) {
-                e.preventDefault();
-                contextTargetShortcut = this;
-                shortcutContextMenu.style.display = 'block';
-                shortcutContextMenu.style.left = e.pageX + 'px';
-                shortcutContextMenu.style.top = e.pageY + 'px';
-            };
-        }
-        // Day/Week of Year shortcut
-        const dayWeekShortcut = document.querySelector('.shortcut.day-week-shortcut');
-        if (dayWeekShortcut) {
-            dayWeekShortcut.oncontextmenu = function(e) {
-                e.preventDefault();
-                contextTargetShortcut = this;
-                shortcutContextMenu.style.display = 'block';
-                shortcutContextMenu.style.left = e.pageX + 'px';
-                shortcutContextMenu.style.top = e.pageY + 'px';
-            };
+        // 1. Try to load from cache first
+        try {
+            const cached = JSON.parse(localStorage.getItem(cacheKey));
+            // Check if cache exists, is for the correct city, and is not stale
+            if (cached && cached.data.city === currentCity && (Date.now() - cached.timestamp < cacheDuration)) {
+                container.innerHTML = cached.data.html;
+                return; // Cache is fresh and valid, we are done!
+            }
+        } catch (e) { /* Cache is invalid or doesn't exist, proceed to fetch */ }
+
+        // 2. If cache is stale or missing, show loading and fetch new data
+        const city = currentCity;
+        container.innerHTML = `<div style='display:flex;align-items:center;gap:7px;'><svg width="22" height="22" style="vertical-align:middle;opacity:0.7;" viewBox="0 0 24 24"><path fill="#3a8dde" d="M6 19a7 7 0 1 1 12.9-4.1A5 5 0 1 1 18 19H6z"/></svg> <span style='font-weight:500;'>Weather</span></div><div style='margin-top:4px;'>Loading...</div>`;
+        
+        // Geocode city to lat/lon
+        let lat = 51.5072, lon = -0.1276; // London default
+        try {
+            const geo = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`);
+            const geoData = await geo.json();
+            if (geoData.results && geoData.results[0]) {
+                lat = geoData.results[0].latitude;
+                lon = geoData.results[0].longitude;
+            }
+        } catch (e) {}
+        
+        // Fetch weather
+        try {
+            const weather = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode&forecast_days=3&timezone=auto`);
+            const w = await weather.json();
+            let finalHtml;
+            if (w && w.daily && w.daily.time) {
+                const days = w.daily.time.map((date, i) => {
+                    const tmax = w.daily.temperature_2m_max[i];
+                    const tmin = w.daily.temperature_2m_min[i];
+                    const code = w.daily.weathercode[i];
+                    const icon = weatherIcon(code);
+                    const label = i === 0 ? 'Today' : (i === 1 ? 'Tomorrow' : (new Date(date)).toLocaleDateString(undefined, { weekday: 'short' }));
+                    return `<div style='display:flex;align-items:center;gap:7px;justify-content:space-between;'><span style='font-size:1.2em;width:1.8em;text-align:center;'>${icon}</span> <span style='font-size:0.98em;width:5.5em;'>${label}</span> <span style='color:#3a8dde;font-size:1em;text-align:right;min-width:56px;display:inline-block;'>${Math.round(tmax)}°/${Math.round(tmin)}°</span></div>`;
+                }).join('');
+                finalHtml = `
+                <div style='display:flex;align-items:center;justify-content:space-between;'>
+                    <div style='display:flex;align-items:center;gap:7px;'>
+                        <svg width="22" height="22" style="vertical-align:middle;opacity:0.7;" viewBox="0 0 24 24"><path fill="#3a8dde" d="M6 19a7 7 0 1 1 12.9-4.1A5 5 0 1 1 18 19H6z"/></svg>
+                        <span style='font-weight:500;'>Weather</span>
+                    </div>
+                    <span style='font-size:0.97em;color:#888;text-align:right;min-width:56px;display:inline-block;'>${city}</span>
+                </div>
+                <div style='margin-top:4px;'>${days}</div>
+                `;
+                // 3. Save the new data to cache
+                const newCache = {
+                    timestamp: Date.now(),
+                    data: {
+                        html: finalHtml,
+                        city: city
+                    }
+                };
+                localStorage.setItem(cacheKey, JSON.stringify(newCache));
+            } else {
+                finalHtml = `<div style='display:flex;align-items:center;justify-content:space-between;'><div style='display:flex;align-items:center;gap:7px;'><svg width="22" height="22" style="vertical-align:middle;opacity:0.7;" viewBox="0 0 24 24"><path fill="#3a8dde" d="M6 19a7 7 0 1 1 12.9-4.1A5 5 0 1 1 18 19H6z"/></svg> <span style='font-weight:500;'>Weather</span></div><span style='font-size:0.97em;color:#888;text-align:right;min-width:56px;display:inline-block;'>${city}</span></div><div style='margin-top:4px;'>Weather unavailable</div>`;
+            }
+            container.innerHTML = finalHtml;
+        } catch (e) {
+            container.innerHTML = `<div style='display:flex;align-items:center;justify-content:space-between;'><div style='display:flex;align-items:center;gap:7px;'><svg width="22" height="22" style="vertical-align:middle;opacity:0.7;" viewBox="0 0 24 24"><path fill="#3a8dde" d="M6 19a7 7 0 1 1 12.9-4.1A5 5 0 1 1 18 19H6z"/></svg> <span style='font-weight:500;'>Weather</span></div><span style='font-size:0.97em;color:#888;text-align:right;min-width:56px;display:inline-block;'>${city}</span></div><div style='margin-top:4px;'>Weather unavailable</div>`;
         }
     }
-    // Patch attachShortcutContextMenu to always call this
-    const prevAttachShortcutContextMenu = attachShortcutContextMenu;
-    attachShortcutContextMenu = function() {
-        prevAttachShortcutContextMenu();
-        attachContextMenuToBuiltInShortcuts();
-    };
-    // Call once on load
-    attachContextMenuToBuiltInShortcuts();
+    // Weather code to emoji/icon
+    function weatherIcon(code) {
+        if (code === 0) return '☀️'; // Clear
+        if (code === 1 || code === 2) return '🌤️'; // Mainly clear/partly cloudy
+        if (code === 3) return '☁️'; // Overcast
+        if (code >= 45 && code <= 48) return '🌫️'; // Fog
+        if (code >= 51 && code <= 67) return '🌦️'; // Drizzle/rain
+        if (code >= 71 && code <= 77) return '❄️'; // Snow
+        if (code >= 80 && code <= 82) return '🌧️'; // Rain showers
+        if (code >= 95 && code <= 99) return '⛈️'; // Thunderstorm
+        return '🌡️';
+    }
+
+    fetchAndShowWeather();
+    // Refresh every 30min
+    setInterval(fetchAndShowWeather, 30 * 60 * 1000);
+})();
 });
